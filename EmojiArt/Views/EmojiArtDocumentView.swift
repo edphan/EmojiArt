@@ -49,7 +49,7 @@ struct EmojiArtDocumentView: View {
             .onDrop(of: [.plainText,.url,.image], isTargeted: nil) { providers, location in
                 drop(providers: providers, at: location, in: geometry)
             }
-            .gesture(panGesture().simultaneously(with: zoomGesture()))
+            .gesture(panGesture().simultaneously(with: zoomGesture().exclusively(before: tapDeselectGesture())))
         }
     }
     
@@ -114,6 +114,13 @@ struct EmojiArtDocumentView: View {
         TapGesture(count: 1)
             .onEnded {
                 selectedEmojis.toggleMatching(for: emoji)
+            }
+    }
+    
+    private func tapDeselectGesture() -> some Gesture {
+        TapGesture(count: 1)
+            .onEnded {
+                selectedEmojis.removeAll()
             }
     }
     
