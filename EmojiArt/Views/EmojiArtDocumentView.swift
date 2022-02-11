@@ -27,12 +27,17 @@ struct EmojiArtDocumentView: View {
                         .scaleEffect(zoomScale)
                         .position(convertFromEmojiCoordinates((0,0), in: geometry))
                 )
-                .gesture(doubleTapToZoom(in: geometry.size))
+                    .gesture(doubleTapToZoom(in: geometry.size))
                 if document.backgroundImageFetchStatus == .fetching {
                     ProgressView().scaleEffect(2)
                 } else {
                     ForEach(document.emojis) { emoji in
                         Text(emoji.text)
+                            .background(
+                                Rectangle()
+                                    .stroke(Color.green)
+                                    .opacity(selectedEmojis.contains(emoji) ? 1 : 0)
+                            )
                             .font(.system(size: fontSize(for: emoji)))
                             .scaleEffect(zoomScale)
                             .position(position(for: emoji, in: geometry))
@@ -167,7 +172,7 @@ struct EmojiArtDocumentView: View {
                 steadyStatePanOffset = steadyStatePanOffset + (finalDragGestureValue.translation / zoomScale)
             }
     }
-
+    
     // MARK: - Palette
     
     var palette: some View {
@@ -180,7 +185,7 @@ struct EmojiArtDocumentView: View {
 
 struct ScrollingEmojisView: View {
     let emojis: String
-
+    
     var body: some View {
         ScrollView(.horizontal) {
             HStack {
