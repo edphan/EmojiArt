@@ -252,3 +252,13 @@ extension Array where Element == NSItemProvider {
     }
 }
 
+extension Set where Element: Identifiable {
+    mutating func toggleMatching(for emoji: Element) {
+        let isMatched = self.contains(emoji)
+        if isMatched {
+            self.remove(emoji)
+        } else {
+            self.insert(emoji)
+        }
+    }
+}

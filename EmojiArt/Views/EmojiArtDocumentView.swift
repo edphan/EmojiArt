@@ -36,6 +36,7 @@ struct EmojiArtDocumentView: View {
                             .font(.system(size: fontSize(for: emoji)))
                             .scaleEffect(zoomScale)
                             .position(position(for: emoji, in: geometry))
+                            .gesture(tapGesture(for: emoji))
                     }
                 }
             }
@@ -102,7 +103,14 @@ struct EmojiArtDocumentView: View {
     }
     
     // MARK: - Selecting Emojis
-    @State private var selectedEmojis: Set<String> = []
+    @State private var selectedEmojis: Set<EmojiArtModel.Emoji> = []
+    
+    private func tapGesture(for emoji: EmojiArtModel.Emoji) -> some Gesture {
+        TapGesture(count: 1)
+            .onEnded {
+                selectedEmojis.toggleMatching(for: emoji)
+            }
+    }
     
     // MARK: - Zooming
     
