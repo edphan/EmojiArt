@@ -53,6 +53,22 @@ struct EmojiArtDocumentView: View {
         }
     }
     
+    @State private var steadyStateZoomScale: CGFloat = 1
+    @GestureState private var gestureZoomScale: CGFloat = 1
+    
+    @State private var steadyStatePanOffset: CGSize = CGSize.zero
+    @GestureState private var gesturePanOffset: CGSize = CGSize.zero
+    
+    private var zoomScale: CGFloat {
+        // Ternary statement so that the zoomScale for the background
+        // is 1 to prevent background from zooming when selectedEmojis is not empty
+        steadyStateZoomScale * (selectedEmojis.isEmpty ? gestureZoomScale : 1)
+    }
+    
+    private var panOffset: CGSize {
+        (steadyStatePanOffset + gesturePanOffset) * zoomScale
+    }
+    
     // MARK: - Drag and Drop
     
     private func drop(providers: [NSItemProvider], at location: CGPoint, in geometry: GeometryProxy) -> Bool {
@@ -131,16 +147,6 @@ struct EmojiArtDocumentView: View {
     }
     
     // MARK: - Zooming
-    
-    @State private var steadyStateZoomScale: CGFloat = 1
-    @GestureState private var gestureZoomScale: CGFloat = 1
-    
-    private var zoomScale: CGFloat {
-        // Ternary statement so that the zoomScale for the background
-        // is 1 to prevent background from zooming when selectedEmojis is not empty
-        steadyStateZoomScale * (selectedEmojis.isEmpty ? gestureZoomScale : 1)
-    }
-    
     private func zoomGesture() -> some Gesture {
         MagnificationGesture()
             .updating($gestureZoomScale) { latestGestureScale, gestureZoomScale, _ in
@@ -178,14 +184,6 @@ struct EmojiArtDocumentView: View {
     }
     
     // MARK: - Panning
-    
-    @State private var steadyStatePanOffset: CGSize = CGSize.zero
-    @GestureState private var gesturePanOffset: CGSize = CGSize.zero
-    
-    private var panOffset: CGSize {
-        (steadyStatePanOffset + gesturePanOffset) * zoomScale
-    }
-    
     private func panGesture() -> some Gesture {
         DragGesture()
             .updating($gesturePanOffset) { latestDragGestureValue, gesturePanOffset, _ in
