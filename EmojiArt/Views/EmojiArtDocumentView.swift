@@ -49,7 +49,7 @@ struct EmojiArtDocumentView: View {
             .onDrop(of: [.plainText,.url,.image], isTargeted: nil) { providers, location in
                 drop(providers: providers, at: location, in: geometry)
             }
-            .gesture(panGesture().simultaneously(with: zoomGesture().exclusively(before: tapDeselectGesture())))
+            .gesture(panGesture().simultaneously(with: zoomGesture().exclusively(before: tapToDeselectGesture())))
         }
     }
     
@@ -87,7 +87,13 @@ struct EmojiArtDocumentView: View {
     }
     
     private func fontSize(for emoji: EmojiArtModel.Emoji) -> CGFloat {
-        CGFloat(emoji.size)
+        // control the size of the selected emojis with the gestureZoomScale
+        // because gestureZoomScale gets continuously update when the zoom gesture is in motion
+        if selectedEmojis.contains(emoji) {
+            return CGFloat(emoji.size) * gestureZoomScale
+        } else {
+            return CGFloat(emoji.size)
+        }
     }
     
     private func convertToEmojiCoordinates(_ location: CGPoint, in geometry: GeometryProxy) -> (x: Int, y: Int) {
@@ -117,7 +123,7 @@ struct EmojiArtDocumentView: View {
             }
     }
     
-    private func tapDeselectGesture() -> some Gesture {
+    private func tapToDeselectGesture() -> some Gesture {
         TapGesture(count: 1)
             .onEnded {
                 selectedEmojis.removeAll()
@@ -130,7 +136,9 @@ struct EmojiArtDocumentView: View {
     @GestureState private var gestureZoomScale: CGFloat = 1
     
     private var zoomScale: CGFloat {
-        steadyStateZoomScale * gestureZoomScale
+        // Ternary statement so that the zoomScale for the background
+        // is 1 to prevent background from zooming when selectedEmojis is not empty
+        steadyStateZoomScale * (selectedEmojis.isEmpty ? gestureZoomScale : 1)
     }
     
     private func zoomGesture() -> some Gesture {
@@ -139,7 +147,15 @@ struct EmojiArtDocumentView: View {
                 gestureZoomScale = latestGestureScale
             }
             .onEnded { gestureScaleAtEnd in
-                steadyStateZoomScale *= gestureScaleAtEnd
+                if selectedEmojis.isEmpty {
+                    steadyStateZoomScale *= gestureScaleAtEnd
+                } else {
+                    // when the zoom gesture ended, set the size of selected emojis in
+                    // document.emojis to the new size
+                    selectedEmojis.forEach { emoji in
+                        document.scaleEmoji(emoji, by: gestureScaleAtEnd)
+                    }
+                }
             }
     }
     
