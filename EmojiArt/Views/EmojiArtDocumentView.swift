@@ -59,6 +59,8 @@ struct EmojiArtDocumentView: View {
     @State private var steadyStatePanOffset: CGSize = CGSize.zero
     @GestureState private var gesturePanOffset: CGSize = CGSize.zero
     
+    @GestureState private var gesturePanOffsetEmoji: CGSize = CGSize.zero
+    
     private var zoomScale: CGFloat {
         // Ternary statement so that the zoomScale for the background
         // is 1 to prevent background from zooming when selectedEmojis is not empty
@@ -68,6 +70,14 @@ struct EmojiArtDocumentView: View {
     private var panOffset: CGSize {
         (steadyStatePanOffset + gesturePanOffset) * zoomScale
     }
+    
+    private var emojiZoomScale: CGFloat {
+        steadyStateZoomScale * gestureZoomScale
+    }
+    
+//    private var emojiPanOffSet: CGSize {
+//        steadyStatePanOffset + gesturePanOffset * (
+//    }
     
     // MARK: - Drag and Drop
     
@@ -99,7 +109,7 @@ struct EmojiArtDocumentView: View {
     // MARK: - Positioning/Sizing Emoji
     
     private func position(for emoji: EmojiArtModel.Emoji, in geometry: GeometryProxy) -> CGPoint {
-        convertFromEmojiCoordinates((emoji.x, emoji.y), in: geometry)
+        convertFromEmojiCoordinates((emoji.x + (selectedEmojis.contains(emoji) ? Int(gesturePanOffsetEmoji.width) : 0), emoji.y + (selectedEmojis.contains(emoji) ? Int(gesturePanOffsetEmoji.height) : 0)), in: geometry)
     }
     
     private func fontSize(for emoji: EmojiArtModel.Emoji) -> CGFloat {
@@ -184,14 +194,27 @@ struct EmojiArtDocumentView: View {
     }
     
     // MARK: - Panning
+    
     private func panGesture() -> some Gesture {
-        DragGesture()
-            .updating($gesturePanOffset) { latestDragGestureValue, gesturePanOffset, _ in
-                gesturePanOffset = latestDragGestureValue.translation / zoomScale
-            }
-            .onEnded { finalDragGestureValue in
-                steadyStatePanOffset = steadyStatePanOffset + (finalDragGestureValue.translation / zoomScale)
-            }
+        if selectedEmojis.isEmpty {
+            return DragGesture()
+                .updating($gesturePanOffset) { latestDragGestureValue, gesturePanOffset, _ in
+                    gesturePanOffset = latestDragGestureValue.translation / zoomScale
+                }
+                .onEnded { finalDragGestureValue in
+                    steadyStatePanOffset = steadyStatePanOffset + (finalDragGestureValue.translation / zoomScale)
+                }
+        } else {
+            return DragGesture()
+                .updating($gesturePanOffsetEmoji) { latestDragGestureValue, gesturePanOffsetEmoji, _ in
+                    gesturePanOffsetEmoji = latestDragGestureValue.translation / emojiZoomScale
+                }
+                .onEnded { finalDragGestureValue in
+                    selectedEmojis.forEach { emoji in
+                        document.moveEmoji(emoji, by: finalDragGestureValue.translation / emojiZoomScale)
+                    }
+                }
+        }
     }
     
     // MARK: - Palette
